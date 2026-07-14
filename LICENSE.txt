@@ -1,0 +1,36 @@
+DFM80 簡易驅動 — 使用授權條款
+Copyright (c) 2026 YangMieh（小咩）. 保留所有權利。
+
+本軟體之原始碼公開，供檢視、學習與使用。
+
+【允許】
+- 免費下載、安裝、使用本軟體。
+- 原封不動地轉載、分享本軟體與其原始碼（須完整保留本授權條款與作者聲明）。
+
+【禁止】
+- 修改、改作原始碼或程式後，再行散布、發布或公開。
+- 任何商業使用、販售或營利行為。
+- 移除、竄改作者資訊或本授權聲明。
+
+本軟體按「現狀」（AS IS）提供，作者不負任何明示或默示之擔保責任，
+亦不對使用本軟體所生之任何損害負責。
+
+--------------------------------------------------------------------------
+
+DFM80 Simple Driver — License
+Copyright (c) 2026 YangMieh. All rights reserved.
+
+The source code is made public for review, learning and use.
+
+PERMITTED
+- Download, install and use the software free of charge.
+- Redistribute/share the software and its source VERBATIM
+  (this license and the author notice must be kept intact).
+
+PROHIBITED
+- Distributing, publishing or releasing MODIFIED versions of the source or program.
+- Any commercial use, resale or for-profit activity.
+- Removing or altering the author information or this notice.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. The author is
+not liable for any damages arising from the use of this software.

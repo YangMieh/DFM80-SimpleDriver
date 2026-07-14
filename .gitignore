@@ -1,0 +1,13 @@
+# 官方驅動逆向參考檔（版權敏感，不公開散布）
+reference/
+# 舊純網頁版（已被桌面版取代，僅本機留存參考）
+_網頁版參考/
+# 早期獨立休眠小工具（假休眠已整合進 app，棄用）
+SleepMode/
+# 備份與暫存
+*.bak
+_backup/
+*.clean.exe
+
+# exe 為編譯產物，放 GitHub Release 供下載，不進 repo
+*.exe

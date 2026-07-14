@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DFM80 簡易驅動</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0d12'/%3E%3Cpath d='M10 6h6a10 10 0 0 1 0 20h-6zM14 10v12h2a6 6 0 0 0 0-12z' fill='%232dd4ff'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0a0d12; --bg2:#0e1219; --card:#131a24; --card2:#182130;
+  --line:#233043; --line2:#2e3d55;
+  --tx:#dbe7f4; --tx2:#8fa3bb; --tx3:#5b6c82;
+  --ac:#2dd4ff; --ac-dim:#1a7fa0; --ac-glow:rgba(45,212,255,.14);
+  --ok:#3ee6a8; --warn:#ffb454; --err:#ff5d6c;
+  --on-ac:#04121b; --toolbar-bg:rgba(14,18,25,.92);
+  --radius:14px;
+  color-scheme:dark;
+}
+[data-theme="light"]{
+  --bg:#e9eef5; --bg2:#f4f8fc; --card:#ffffff; --card2:#eef3f9;
+  --line:#d8e1ec; --line2:#c3d0e0;
+  --tx:#1b2531; --tx2:#4d6076; --tx3:#8598ad;
+  --ac:#0c93cf; --ac-dim:#57b6dd; --ac-glow:rgba(12,147,207,.14);
+  --ok:#0d9e69; --warn:#c47f16; --err:#d63b4a;
+  --on-ac:#ffffff; --toolbar-bg:rgba(255,255,255,.92);
+  color-scheme:light;
+}
+[data-theme="light"] .logo{background:linear-gradient(135deg,#ffffff,#e2ebf6)}
+[data-theme="light"] button.primary{background:linear-gradient(135deg,var(--ac),#0b7fb3)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--tx);font-family:"Segoe UI","Microsoft JhengHei",system-ui,sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;background:
+  radial-gradient(1200px 500px at 80% -10%, rgba(45,212,255,.06), transparent 60%),
+  radial-gradient(900px 400px at -10% 110%, rgba(62,230,168,.05), transparent 60%),
+  var(--bg)}
+a{color:var(--ac);text-decoration:none}
+.wrap{max-width:980px;margin:0 auto;padding:22px 18px 60px}
+
+/* ---------- header ---------- */
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:6px 2px 18px}
+.logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#12202e,#0c1119);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--ac);font-size:19px;letter-spacing:-1px;box-shadow:0 0 18px var(--ac-glow)}
+h1{font-size:19px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+h1 small{display:block;font-size:11px;color:var(--tx3);letter-spacing:.28em;font-weight:600}
+.spacer{flex:1}
+.ver{font-size:11px;color:var(--tx3);border:1px solid var(--line);border-radius:99px;padding:2px 10px}
+.langs{display:flex;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.langs button{background:none;border:0;color:var(--tx3);font-size:12px;padding:4px 11px;cursor:pointer}
+.langs button.on{background:var(--card2);color:var(--tx)}
+
+/* ---------- connect bar ---------- */
+.connbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--tx3);flex:none}
+.dot.on{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.dot.off{background:var(--err)}
+#connName{font-weight:600}
+#connSub{font-size:12px;color:var(--tx2)}
+.batt{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--tx2)}
+.ecoBadge{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:600;color:var(--warn);border:1px solid var(--warn);border-radius:99px;padding:3px 11px;background:rgba(255,180,84,.08);white-space:nowrap}
+.batt .shell{width:30px;height:14px;border:1.5px solid var(--tx2);border-radius:3px;position:relative;padding:2px}
+.batt .shell::after{content:"";position:absolute;right:-5px;top:3.5px;width:3px;height:5px;background:var(--tx2);border-radius:0 2px 2px 0}
+.batt .fill{height:100%;border-radius:1px;background:var(--ok);width:0%}
+button.primary{background:linear-gradient(135deg,var(--ac),#1e9fd6);color:var(--on-ac);font-weight:700;border:0;border-radius:10px;padding:10px 22px;font-size:14px;cursor:pointer;letter-spacing:.04em;box-shadow:0 2px 16px var(--ac-glow)}
+button.primary:hover{filter:brightness(1.12)}
+button.primary:disabled{filter:grayscale(.8);opacity:.5;cursor:default}
+button.ghost{background:var(--card2);color:var(--tx);border:1px solid var(--line2);border-radius:10px;padding:9px 16px;font-size:13px;cursor:pointer}
+button.ghost:hover{border-color:var(--ac-dim)}
+button.ghost.danger:hover{border-color:var(--err);color:var(--err)}
+button.ghost:disabled{opacity:.4;cursor:default}
+
+/* ---------- cards ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card.hero{border-color:var(--ac-dim);box-shadow:0 0 0 1px var(--ac-glow),0 6px 30px rgba(0,0,0,.35)}
+.card h2{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--ac);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card h2 .ico{opacity:.9}
+.card .desc{font-size:12.5px;color:var(--tx2);margin-bottom:16px}
+.row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:12px 0}
+.lbl{width:130px;flex:none;font-size:13.5px;color:var(--tx2)}
+.hint{font-size:12px;color:var(--tx3)}
+
+/* segmented */
+.seg{display:flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+.seg button{background:none;border:0;color:var(--tx2);padding:9px 18px;font-size:13.5px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ac);color:var(--on-ac);font-weight:700}
+.seg.big button{padding:12px 22px;font-size:14.5px}
+
+/* sliders */
+input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;background:var(--line2);outline:none;flex:1;min-width:140px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--ac);cursor:pointer;box-shadow:0 0 8px var(--ac-glow);border:2px solid var(--card)}
+input[type=number]{background:var(--bg2);border:1px solid var(--line2);color:var(--tx);border-radius:8px;padding:7px 10px;width:88px;font-size:14px;text-align:center}
+input[type=number]:focus{border-color:var(--ac-dim);outline:none}
+select{background:var(--bg2);border:1px solid var(--line2);color:var(--tx);border-radius:8px;padding:7px 10px;font-size:14px}
+
+/* dpi stages */
+.stage{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin:7px 0;background:var(--bg2)}
+.stage.cur{border-color:var(--ac-dim);background:linear-gradient(90deg,var(--ac-glow),transparent 40%),var(--bg2)}
+.stage .chip{width:26px;height:26px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;color:#04121b;cursor:pointer}
+.stage .curmark{font-size:11px;color:var(--ac);width:64px;flex:none;text-align:right;cursor:pointer;opacity:.45}
+.stage.cur .curmark{opacity:1;font-weight:700}
+.stage.hidden{display:none}
+
+/* toggles / radio-cards */
+.optcards{display:flex;gap:12px;flex-wrap:wrap;flex:1}
+.wakeRow{display:flex;gap:12px;flex-wrap:wrap;flex:1;align-items:stretch}
+.clickMini{flex:none;width:96px;border:1px solid var(--line2);border-radius:12px;padding:12px 8px;background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:default}
+.clickMini.lit{border-color:var(--ac-dim);background:linear-gradient(135deg,var(--ac-glow),transparent 72%),var(--bg2)}
+.clickMini.dim{opacity:.5}
+.optcard{flex:1;min-width:190px;border:1px solid var(--line2);border-radius:12px;padding:14px 16px;cursor:pointer;background:var(--bg2)}
+.optcard .t{font-weight:700;font-size:15px;display:flex;gap:8px;align-items:center}
+.optcard .d{font-size:12px;color:var(--tx2);margin-top:3px}
+.optcard.on{border-color:var(--ac);background:linear-gradient(135deg,var(--ac-glow),transparent 70%),var(--bg2);box-shadow:0 0 14px var(--ac-glow)}
+.optcard.on .t{color:var(--ac)}
+.badge{font-size:10.5px;font-weight:600;letter-spacing:.02em;color:var(--tx3);border:1px solid var(--line2);border-radius:99px;padding:1px 7px;vertical-align:1px}
+.badge.hot{color:var(--warn);border-color:var(--warn)}
+/* 單擊喚醒＝常駐柔光底色（基準狀態，不可切換）；移動喚醒＝toggle 開關 */
+.optcard.lit{border-color:var(--ac-dim);background:linear-gradient(135deg,var(--ac-glow),transparent 72%),var(--bg2);cursor:default}
+.optcard.lit .t{color:var(--ac)}
+#moveCard{cursor:default}
+/* 假休眠(移動喚醒)開啟＝藍色 .on；電競模式開啟＝橘色 */
+#moveCard.on{border-color:var(--ac);background:linear-gradient(135deg,var(--ac-glow),transparent 72%),var(--bg2);box-shadow:0 0 14px var(--ac-glow)}
+#moveCard.on .t{color:var(--ac)}
+#esportsCard.on{border-color:var(--warn);background:linear-gradient(135deg,rgba(255,180,84,.12),transparent 72%),var(--bg2);box-shadow:0 0 16px rgba(255,180,84,.22)}
+#esportsCard.on .t{color:var(--warn)}
+#esportsToggle:checked+.slider{background:var(--warn)}
+.switch{position:relative;display:inline-block;width:44px;height:24px;margin-left:auto;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch .slider{position:absolute;inset:0;background:var(--line2);border-radius:99px;transition:.2s;cursor:pointer}
+.switch .slider::before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked+.slider{background:var(--warn)}
+.switch input:checked+.slider::before{transform:translateX(20px)}
+
+/* two-column row */
+.grid2{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.grid2>.card{margin-bottom:0}
+.grid2>.gPoll{flex:1.5;min-width:280px}
+.grid2>.gBatt{flex:.9;min-width:190px}
+.grid2>.gDesk{flex:1.1;min-width:210px}
+@media (max-width:640px){.grid2>.card{flex:1 1 100%}}
+
+/* big battery */
+.battbig{display:flex;align-items:center;gap:16px;padding:2px}
+.deskChk{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px;margin:10px 0}
+.deskChk input{width:16px;height:16px;cursor:pointer}
+.deskChk .sub{display:block;font-size:11.5px;color:var(--tx3);margin-top:1px}
+.bcol{display:flex;flex-direction:column;align-items:center;gap:8px}
+.bshell{width:38px;height:64px;border:2.5px solid var(--tx2);border-radius:8px;position:relative;padding:3px;display:flex;align-items:flex-end}
+.bshell::before{content:"";position:absolute;top:-7px;left:50%;translate:-50% 0;width:15px;height:5px;background:var(--tx2);border-radius:3px 3px 0 0}
+.bfill{width:100%;height:0%;border-radius:5px;background:linear-gradient(to top,var(--err),var(--warn) 45%,var(--ok) 80%);transition:height .5s}
+.bpct{font-size:18px;font-weight:800}
+.blegend{display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--tx2)}
+.blegend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:8px;vertical-align:-1px}
+#battCard.asleep .bshell,#battCard.asleep .bpct{opacity:.45}
+
+/* collapsible */
+details{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:16px;background:var(--card)}
+details summary{cursor:pointer;padding:15px 20px;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--tx2);list-style:none;display:flex;align-items:center;gap:8px}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"▾";margin-left:auto;color:var(--tx3);transition:.2s}
+details[open] summary::after{rotate:180deg}
+details .inner{padding:4px 20px 18px}
+
+/* toolbar */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;position:sticky;bottom:14px;background:var(--toolbar-bg);backdrop-filter:blur(8px);border:1px solid var(--line2);border-radius:var(--radius);padding:12px 16px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+#applyBtn{padding:11px 30px}
+.dirty #applyBtn{animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 12px var(--ac-glow)}50%{box-shadow:0 0 26px rgba(45,212,255,.4)}}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:90px;translate:-50% 0;background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:10px 20px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:86vw}
+#toast.show{opacity:1}
+#toast.ok{border-color:var(--ok);color:var(--ok)}
+#toast.err{border-color:var(--err);color:var(--err)}
+
+/* diag */
+.mono{font-family:Consolas,monospace;font-size:12px;color:var(--tx2);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.kv{font-size:13px;color:var(--tx2);margin:3px 0}
+.kv b{color:var(--tx)}
+
+/* unsupported banner */
+#nohid{display:none;border:1px solid var(--warn);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;color:var(--warn);background:rgba(255,180,84,.06);font-size:14px}
+
+footer{text-align:center;color:var(--tx3);font-size:12px;margin-top:34px}
+@media (max-width:560px){.lbl{width:100%}.toolbar{position:static}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="logo">D</div>
+  <h1 data-i18n="title">DFM80 簡易驅動<small data-i18n="subtitle">darkFlash DFM80 系列</small></h1>
+  <div class="spacer"></div>
+  <span class="ver" id="verTag"></span>
+  <div class="langs" id="themePill"></div>
+  <div class="langs" id="langs"></div>
+</header>
+
+<div id="nohid" data-i18n="nohid">此瀏覽器不支援 WebHID。請改用電腦版 Chrome 或 Edge 開啟本頁（需 https 或 localhost）。</div>
+
+<div class="connbar">
+  <span class="dot" id="connDot"></span>
+  <div style="flex:1;min-width:180px">
+    <div id="connName" data-i18n="notConnected">尚未連線</div>
+    <div id="connSub" data-i18n="connHint">請以 USB 線或 2.4G 接收器連接滑鼠（藍牙模式無法設定）</div>
+  </div>
+  <span class="hint" id="sleepBadge" style="display:none"></span>
+  <span class="ecoBadge" id="ecoBadge" style="display:none">💤 <span data-i18n="ecoMode">省電模式中</span> · 125Hz</span>
+  <div class="batt" id="battBox" style="display:none">
+    <div class="shell"><div class="fill" id="battFill"></div></div>
+    <span id="battTxt">--%</span>
+  </div>
+  <button class="primary" id="connBtn" data-i18n="connect">連接滑鼠</button>
+</div>
+
+<!-- ============ 省電與喚醒（主打） ============ -->
+<div class="card hero">
+  <h2><span class="ico">⏾</span><span data-i18n="powerTitle">省電與喚醒</span></h2>
+  <div class="desc" data-i18n="powerDesc">設定會寫入滑鼠機身記憶體，換電腦、換連線模式（含藍牙）都持續生效。</div>
+
+  <div class="row">
+    <span class="lbl" data-i18n="wakeMode">喚醒方式</span>
+    <div class="wakeRow">
+      <div class="clickMini lit" id="clickMini" title="原廠預設：休眠後需點一下才醒（該下點擊可能誤觸）">
+        <div style="font-size:22px;line-height:1">👆</div>
+        <div style="font-weight:700;font-size:13px;margin-top:4px" data-i18n="clickWake">單擊喚醒</div>
+        <div class="badge" data-i18n="badgeDefault" style="margin-top:5px">原廠預設</div>
+      </div>
+      <div class="optcard" id="moveCard">
+        <div class="t">🖱 <span data-i18n="moveWake">移動喚醒</span>
+          <label class="switch"><input type="checkbox" id="moveToggle"><span class="slider"></span></label>
+        </div>
+        <div class="d" data-i18n="moveWakeDesc">閒置一段時間自動降頻省電，動一下滑鼠立即恢復（不會深睡到叫不醒）</div>
+      </div>
+      <div class="optcard" id="esportsCard">
+        <div class="t">⚡ <span data-i18n="esportsWake">電競模式</span>
+          <label class="switch"><input type="checkbox" id="esportsToggle"><span class="slider"></span></label>
+        </div>
+        <div class="d" data-i18n="esportsWakeDesc">感測器和主控進入最活躍模式，回應更快、更耗電</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <span class="lbl" id="sleepTimeLabel" data-i18n="sleepTime">休眠時間</span>
+    <input type="range" id="sleepRange" min="1" max="60" step="1" value="3">
+    <input type="number" id="sleepNum" min="1" max="255" value="3">
+    <span class="hint" data-i18n="minutes">分鐘</span>
+  </div>
+  <div class="hint" id="sleepHintDyn" data-i18n="sleepHintReal">2.4G／藍牙模式下，閒置超過此時間自動休眠（原廠預設 3 分鐘）。</div>
+</div>
+
+<!-- ============ DPI ============ -->
+<details id="dpiCard" open>
+  <summary>🎯 <span>DPI</span></summary>
+  <div class="inner">
+    <div class="desc" data-i18n="dpiDesc">點檔位編號可直接切換目前檔位；DPI 鍵循環時只在啟用的檔位間切換。</div>
+    <div class="row">
+      <span class="lbl" data-i18n="dpiCount">檔位數量</span>
+      <div class="seg" id="dpiCountSeg"></div>
+    </div>
+    <div class="hint" data-i18n="stagesFillHint" style="margin:-4px 0 8px">韌體循環格數固定為 6，只開放 1／2／3／6（能整除 6）＝按 DPI 鍵循環乾淨無違和；你設的值會自動鋪滿 6 格。</div>
+    <div id="stages"></div>
+  </div>
+</details>
+
+<!-- ============ 輪詢率 + 電量 ============ -->
+<div class="grid2">
+  <div class="card gPoll">
+    <h2><span class="ico">⚡</span><span data-i18n="pollTitle">輪詢率</span></h2>
+    <div class="desc" data-i18n="pollDesc">回報頻率越高延遲越低、越耗電。無線日常 500Hz 是甜蜜點。</div>
+    <div class="row">
+      <div class="seg big" id="pollSeg"></div>
+    </div>
+    <div class="hint" id="pollLockHint" style="display:none;margin-top:10px">🔒 <span data-i18n="pollLock">移動喚醒開啟中，滑鼠自動以 1000Hz 運作；關閉後恢復你的輪詢率設定</span></div>
+  </div>
+  <div class="card gBatt" id="battCard">
+    <h2><span class="ico">🔋</span><span data-i18n="battTitle">電量</span></h2>
+    <div class="battbig">
+      <div class="bcol">
+        <div class="bshell"><div class="bfill" id="bigFill"></div></div>
+        <div class="bpct" id="bigPct">--%</div>
+      </div>
+      <div class="blegend">
+        <div><i style="background:var(--ok)"></i><span data-i18n="battGood">電量充足</span></div>
+        <div><i style="background:var(--warn)"></i><span data-i18n="battMid">電量正常</span></div>
+        <div><i style="background:var(--err)"></i><span data-i18n="battLow">電量不足</span></div>
+        <div class="hint" id="bigState"></div>
+      </div>
+    </div>
+  </div>
+  <!-- 桌面版設定：只在 exe（WebView2）環境顯示 -->
+  <div class="card gDesk" id="desktopCard" style="display:none">
+    <h2><span class="ico">🖥️</span><span data-i18n="desktopTitle">桌面版</span></h2>
+    <label class="deskChk"><input type="checkbox" id="autostartChk">
+      <span><span data-i18n="autostartLabel">開機時啟動</span><span class="sub" data-i18n="autostartSub">登入 Windows 時自動開啟</span></span></label>
+    <label class="deskChk"><input type="checkbox" id="minTrayChk">
+      <span><span data-i18n="minTrayLabel">關閉時最小化到系統匣</span><span class="sub" data-i18n="minTraySub">按 X 縮到工作列常駐，不結束程式</span></span></label>
+  </div>
+</div>
+
+<!-- ============ 進階（預設隱藏，?debug=1 顯示） ============ -->
+<details id="advCard" style="display:none">
+  <summary>⚙ <span data-i18n="advTitle">進階設定</span></summary>
+  <div class="inner">
+    <div class="row">
+      <span class="lbl" data-i18n="lod">LOD 靜默高度</span>
+      <div class="seg" id="lodSeg"></div>
+      <span class="hint" data-i18n="lodHint">滑鼠抬離桌面多高停止追蹤</span>
+    </div>
+    <div class="row">
+      <span class="lbl" data-i18n="debounce">按鍵去抖動</span>
+      <input type="number" id="debounceNum" min="0" max="30" value="8">
+      <span class="hint" data-i18n="debounceHint">毫秒；越低反應越快、越高越防誤觸連點（原廠 8）</span>
+    </div>
+    <div class="row">
+      <span class="lbl" data-i18n="dpiMax">DPI 上限</span>
+      <select id="dpiMaxSel">
+        <option value="12000">12000（DFM80 / PAW3311）</option>
+        <option value="26000">26000（DFM80 Pro / PAW3395）</option>
+      </select>
+      <span class="hint" data-i18n="dpiMaxHint">只影響本頁滑桿範圍，不會寫入滑鼠</span>
+    </div>
+    <div class="row">
+      <span class="lbl">wakeup_flag</span>
+      <input type="number" id="wakeRawNum" min="0" max="15" value="1">
+      <span class="hint" data-i18n="wakeRawHint">校準用原始值（0–15）。改這裡會覆蓋上方喚醒方式的選擇，實測確認對應後即可忽略此欄。</span>
+    </div>
+    <div class="row">
+      <span class="lbl">nibble swap</span>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="nibbleSwap">
+        <span class="hint" data-i18n="nibbleSwapHint">寫入時把喚醒/燈光旗標高低位對調（校準用：官方讀寫程式碼位序不一致，懷疑寫入端才是錯的）</span>
+      </label>
+    </div>
+  </div>
+</details>
+
+<!-- ============ 診斷（預設隱藏，?debug=1 顯示） ============ -->
+<details id="diagCard" style="display:none">
+  <summary>🩺 <span data-i18n="diagTitle">診斷</span></summary>
+  <div class="inner">
+    <div id="diagInfo"><div class="kv" data-i18n="diagEmpty">連線後顯示裝置資訊</div></div>
+    <div style="height:10px"></div>
+    <div class="mono" id="diagLog"></div>
+  </div>
+</details>
+
+<!-- ============ 工具列 ============ -->
+<div class="toolbar" id="toolbar">
+  <button class="ghost danger" id="factoryBtn" disabled data-i18n="factory">還原原廠</button>
+  <button class="ghost" id="importBtn" disabled data-i18n="import">匯入設定</button>
+  <button class="ghost" id="exportBtn" disabled data-i18n="export">匯出設定</button>
+  <div class="spacer"></div>
+  <button class="ghost" id="rereadBtn" disabled data-i18n="reread">重新讀取</button>
+  <button class="primary" id="applyBtn" disabled data-i18n="apply">套用寫入滑鼠</button>
+  <input type="file" id="importFile" accept=".json" style="display:none">
+</div>
+
+<footer>DFM80 簡易驅動 · YangMieh（小咩）· <span data-i18n="footNote">非官方工具，協定相容 darkFlash DFM80 系列</span></footer>
+
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const VERSION = "1.0.0";
+console.log(`[DFM80 Web Driver] v${VERSION}`);
+
+/* ============================================================
+ * i18n
+ * ==========================================================*/
+const I18N = {
+  "zh-TW": {
+    title:"DFM80 簡易驅動", subtitle:"darkFlash DFM80 系列",
+    nohid:"此瀏覽器不支援 WebHID。請改用電腦版 Chrome 或 Edge 開啟本頁（需 https 或 localhost）。",
+    notConnected:"尚未連線", connHint:"請以 USB 線或 2.4G 接收器連接滑鼠（藍牙模式無法設定）", ecoMode:"省電模式中",
+    connect:"連接滑鼠", disconnect:"中斷連線", connected:"已連線",
+    wired:"USB 有線", dongle:"2.4G 無線", fw:"韌體",
+    powerTitle:"省電與喚醒", powerDesc:"設定會寫入滑鼠機身記憶體，換電腦、換連線模式（含藍牙）都持續生效。",
+    wakeMode:"喚醒方式", moveWake:"移動喚醒", moveWakeDesc:"閒置一段時間自動降頻省電，動一下滑鼠立即恢復（不會深睡到叫不醒）",
+    esportsWake:"電競模式", esportsWakeDesc:"感測器和主控進入最活躍模式，回應更快、更耗電",
+    clickWake:"單擊喚醒", clickWakeDesc:"省電模式，休眠後需按一下才醒（該下點擊可能誤觸）",
+    sleepTimePseudo:"降頻門檻", sleepHintReal:"2.4G／藍牙模式下，閒置超過此時間自動休眠（原廠預設 3 分鐘）。",
+    sleepHintPseudo:"假休眠：閒置超過此時間自動降到 125Hz 省電，偵測到操作立即恢復（滑鼠不會真的深睡）。",
+    badgeDefault:"原廠預設", badgeEsports:"電競模式",
+    sleepTime:"休眠時間", minutes:"分鐘",
+    sleepHint:"2.4G／藍牙模式下，閒置超過此時間自動休眠（原廠預設 3 分鐘）。",
+    dpiDesc:"點檔位編號可直接切換目前檔位。",
+    stagesFillHint:"韌體循環格數固定為 6，只開放 1／2／3／6（能整除 6）＝按 DPI 鍵循環乾淨無違和；你設的值會自動鋪滿 6 格。",
+    dpiCount:"檔位數量", current:"目前檔位", setCurrent:"設為目前",
+    pollTitle:"輪詢率", pollDesc:"回報頻率越高延遲越低、越耗電。無線日常 500Hz 是甜蜜點。",
+    pollLock:"移動喚醒開啟中，滑鼠自動以 1000Hz 運作；關閉後恢復你的輪詢率設定",
+    advTitle:"進階設定", lod:"LOD 靜默高度", lodHint:"滑鼠抬離桌面多高停止追蹤",
+    lodLow:"低", lodHigh:"高",
+    debounce:"按鍵去抖動", debounceHint:"毫秒；越低反應越快、越高越防誤觸連點（原廠 8）",
+    dpiMax:"DPI 上限", dpiMaxHint:"只影響本頁滑桿範圍，不會寫入滑鼠",
+    wakeRawHint:"校準用原始值（0–15）。改這裡會覆蓋上方喚醒方式的選擇，實測確認對應後即可忽略此欄。",
+    nibbleSwapHint:"寫入時把喚醒/燈光旗標高低位對調（校準用：官方讀寫程式碼位序不一致，懷疑寫入端才是錯的）",
+    diagTitle:"診斷", diagEmpty:"連線後顯示裝置資訊",
+    apply:"套用寫入滑鼠", reread:"重新讀取", export:"匯出設定", import:"匯入設定",
+    restoreBackup:"還原初始備份", factory:"還原原廠",
+    footNote:"非官方工具，協定相容 darkFlash DFM80 系列",
+    themeSystem:"跟隨系統", themeDark:"深色", themeLight:"淺色",
+    sleeping:"休眠中", chargingTxt:"充電中",
+    waitWake:"💤 滑鼠可能在休眠，點一下滑鼠就會自動接上",
+    esports:"電競模式", esportsHint:"感測器和主控進入最活躍模式，回應更快、更耗電。★可能改變休眠喚醒行為，值得一試。",
+    battTitle:"電量", battGood:"電量充足", battMid:"電量正常", battLow:"電量不足",
+    desktopTitle:"桌面版", autostartLabel:"開機時啟動", autostartSub:"登入 Windows 時自動開啟", minTrayLabel:"關閉時最小化到系統匣", minTraySub:"按 X 縮到工作列常駐，不結束程式",
+    tPseudoOn:"移動喚醒已開啟（已一併開啟「關閉時最小化到系統匣」）", tPseudoOff:"移動喚醒已關閉",
+    tReadOk:"已讀取滑鼠目前設定", tReadFail:"讀取失敗：滑鼠沒有回應（請確認用 2.4G 接收器或 USB 線連接）",
+    tWriteOk:"已寫入滑鼠 ✓", tWriteFail:"寫入失敗", tNoDev:"未選擇裝置",
+    tBackupSaved:"已自動備份滑鼠初始設定（可隨時還原）",
+    tRestored:"已還原初始備份並寫入滑鼠", tNoBackup:"沒有這隻滑鼠的初始備份",
+    tImported:"已匯入設定，請按「套用寫入滑鼠」", tImportBad:"匯入失敗：檔案格式不對",
+    tFactoryConfirm:"確定要把滑鼠設定還原成原廠預設值嗎？", tDisconnected:"滑鼠已中斷連線",
+    tDirty:"設定已修改，記得按「套用寫入滑鼠」",
+    stage:"檔位"
+  },
+  "en": {
+    title:"DFM80 Simple Driver", subtitle:"for the darkFlash DFM80 series",
+    nohid:"This browser does not support WebHID. Please use desktop Chrome or Edge (https or localhost required).",
+    notConnected:"Not connected", connHint:"Connect the mouse via USB cable or the 2.4G dongle (Bluetooth mode cannot be configured)", ecoMode:"Power saving",
+    connect:"Connect", disconnect:"Disconnect", connected:"Connected",
+    wired:"USB wired", dongle:"2.4G wireless", fw:"Firmware",
+    powerTitle:"Power & Wake-up", powerDesc:"Settings are stored in the mouse's onboard memory — they persist across PCs and connection modes (incl. Bluetooth).",
+    wakeMode:"Wake-up mode", moveWake:"Wake on move", moveWakeDesc:"Throttles down when idle to save power, restores instantly on movement (never a dead sleep)",
+    esportsWake:"E-sports mode", esportsWakeDesc:"Sensor and MCU stay in the most active state — snappier, more power",
+    clickWake:"Wake on click", clickWakeDesc:"Power-saving mode; requires a click to wake (that click may register)",
+    sleepTimePseudo:"Throttle after", sleepHintReal:"In 2.4G/Bluetooth mode the mouse sleeps after this idle time (factory default: 3 min).",
+    sleepHintPseudo:"Pseudo-sleep: after this idle time the mouse drops to 125Hz to save power, and restores instantly on any input (never a deep sleep).",
+    badgeDefault:"Factory default", badgeEsports:"E-sports mode",
+    sleepTime:"Sleep timer", minutes:"min",
+    sleepHint:"In 2.4G/Bluetooth mode the mouse sleeps after this idle time (factory default: 3 min).",
+    dpiDesc:"Click a stage number to make it the active stage.",
+    stagesFillHint:"The firmware always cycles through 6 slots, so only 1／2／3／6 (divisors of 6) are offered — clean cycling, no hiccups. Your values auto-fill all 6 slots.",
+    dpiCount:"Stages", current:"Active", setCurrent:"Set active",
+    pollTitle:"Polling rate", pollDesc:"Higher = lower latency, more power. 500 Hz is the wireless sweet spot.",
+    pollLock:"Wake-on-move is on — the mouse runs at 1000 Hz automatically; your polling choice resumes when it's off",
+    advTitle:"Advanced", lod:"Lift-off distance", lodHint:"How high the mouse stops tracking when lifted",
+    lodLow:"Low", lodHigh:"High",
+    debounce:"Button debounce", debounceHint:"ms; lower = snappier, higher = fewer accidental double-clicks (factory 8)",
+    dpiMax:"DPI ceiling", dpiMaxHint:"Only affects the sliders on this page; not written to the mouse",
+    wakeRawHint:"Raw calibration value (0–15). Overrides the wake-up choice above; ignore once the mapping is confirmed.",
+    nibbleSwapHint:"Swap the wake/light flag nibbles on write (calibration: the official code's read/write bit order disagrees; the write side is suspect)",
+    diagTitle:"Diagnostics", diagEmpty:"Device info appears after connecting",
+    apply:"Apply to mouse", reread:"Re-read", export:"Export", import:"Import",
+    restoreBackup:"Restore first backup", factory:"Factory reset",
+    footNote:"Unofficial tool, protocol-compatible with the darkFlash DFM80 series",
+    themeSystem:"Follow system", themeDark:"Dark", themeLight:"Light",
+    sleeping:"Sleeping", chargingTxt:"Charging",
+    waitWake:"💤 Mouse may be sleeping — click it once and it will reconnect automatically",
+    esports:"E-sports mode", esportsHint:"Sensor and MCU stay in the most active state — snappier, more power. ★May change sleep/wake behavior, worth a try.",
+    battTitle:"Battery", battGood:"Good", battMid:"Fair", battLow:"Low",
+    desktopTitle:"Desktop app", autostartLabel:"Start at login", autostartSub:"Launch automatically when Windows starts", minTrayLabel:"Minimize to tray on close", minTraySub:"X shrinks to tray instead of quitting",
+    tPseudoOn:"Wake-on-move enabled (minimize-to-tray also turned on)", tPseudoOff:"Wake-on-move disabled",
+    tReadOk:"Current settings read from mouse", tReadFail:"Read failed: no response (use the 2.4G dongle or USB cable)",
+    tWriteOk:"Written to mouse ✓", tWriteFail:"Write failed", tNoDev:"No device selected",
+    tBackupSaved:"Initial settings backed up automatically (restorable anytime)",
+    tRestored:"First backup restored and written to mouse", tNoBackup:"No initial backup for this mouse",
+    tImported:"Settings imported — press “Apply to mouse”", tImportBad:"Import failed: invalid file",
+    tFactoryConfirm:"Reset the mouse to factory default settings?", tDisconnected:"Mouse disconnected",
+    tDirty:"Settings changed — remember to “Apply to mouse”",
+    stage:"Stage"
+  },
+  "zh-CN": {
+    title:"DFM80 简易驱动", subtitle:"darkFlash DFM80 系列",
+    nohid:"此浏览器不支持 WebHID。请改用桌面版 Chrome 或 Edge 打开本页（需 https 或 localhost）。",
+    notConnected:"尚未连接", connHint:"请用 USB 线或 2.4G 接收器连接鼠标（蓝牙模式无法设置）", ecoMode:"省电模式中",
+    connect:"连接鼠标", disconnect:"断开连接", connected:"已连接",
+    wired:"USB 有线", dongle:"2.4G 无线", fw:"固件",
+    powerTitle:"省电与唤醒", powerDesc:"设置会写入鼠标机身内存，换电脑、换连接模式（含蓝牙）都持续生效。",
+    wakeMode:"唤醒方式", moveWake:"移动唤醒", moveWakeDesc:"闲置一段时间自动降频省电，动一下鼠标立即恢复（不会深睡到叫不醒）",
+    esportsWake:"电竞模式", esportsWakeDesc:"传感器和主控进入最活跃模式，响应更快、更耗电",
+    clickWake:"单击唤醒", clickWakeDesc:"省电模式，休眠后需按一下才醒（该次点击可能误触）",
+    sleepTimePseudo:"降频门槛", sleepHintReal:"2.4G／蓝牙模式下，闲置超过此时间自动休眠（出厂默认 3 分钟）。",
+    sleepHintPseudo:"假休眠：闲置超过此时间自动降到 125Hz 省电，侦测到操作立即恢复（鼠标不会真的深睡）。",
+    badgeDefault:"出厂默认", badgeEsports:"电竞模式",
+    sleepTime:"休眠时间", minutes:"分钟",
+    sleepHint:"2.4G／蓝牙模式下，闲置超过此时间自动休眠（出厂默认 3 分钟）。",
+    dpiDesc:"点击档位编号可直接切换当前档位。",
+    stagesFillHint:"固件循环格数固定为 6，只开放 1／2／3／6（能整除 6）＝按 DPI 键循环干净无违和；你设的值会自动铺满 6 格。",
+    dpiCount:"档位数量", current:"当前档位", setCurrent:"设为当前",
+    pollTitle:"回报率", pollDesc:"回报频率越高延迟越低、越耗电。无线日常 500Hz 是甜点。",
+    pollLock:"移动唤醒开启中，鼠标自动以 1000Hz 运作；关闭后恢复你的回报率设置",
+    advTitle:"高级设置", lod:"LOD 静默高度", lodHint:"鼠标抬离桌面多高停止追踪",
+    lodLow:"低", lodHigh:"高",
+    debounce:"按键去抖动", debounceHint:"毫秒；越低响应越快、越高越防误触连点（出厂 8）",
+    dpiMax:"DPI 上限", dpiMaxHint:"只影响本页滑杆范围，不会写入鼠标",
+    wakeRawHint:"校准用原始值（0–15）。改这里会覆盖上方唤醒方式的选择，实测确认对应后即可忽略此栏。",
+    nibbleSwapHint:"写入时把唤醒/灯光旗标高低位对调（校准用：官方读写代码位序不一致，怀疑写入端才是错的）",
+    diagTitle:"诊断", diagEmpty:"连接后显示设备信息",
+    apply:"应用写入鼠标", reread:"重新读取", export:"导出设置", import:"导入设置",
+    restoreBackup:"还原初始备份", factory:"恢复出厂",
+    footNote:"非官方工具，协议兼容 darkFlash DFM80 系列",
+    themeSystem:"跟随系统", themeDark:"深色", themeLight:"浅色",
+    sleeping:"休眠中", chargingTxt:"充电中",
+    waitWake:"💤 鼠标可能在休眠，点一下鼠标就会自动接上",
+    esports:"电竞模式", esportsHint:"传感器和主控进入最活跃模式，响应更快、更耗电。★可能改变休眠唤醒行为，值得一试。",
+    battTitle:"电量", battGood:"电量充足", battMid:"电量正常", battLow:"电量不足",
+    desktopTitle:"桌面版", autostartLabel:"开机时启动", autostartSub:"登录 Windows 时自动开启", minTrayLabel:"关闭时最小化到系统匣", minTraySub:"按 X 缩到工作列常驻，不结束程序",
+    tPseudoOn:"移动唤醒已开启（已一并开启「关闭时最小化到系统匣」）", tPseudoOff:"移动唤醒已关闭",
+    tReadOk:"已读取鼠标当前设置", tReadFail:"读取失败：鼠标没有响应（请确认用 2.4G 接收器或 USB 线连接）",
+    tWriteOk:"已写入鼠标 ✓", tWriteFail:"写入失败", tNoDev:"未选择设备",
+    tBackupSaved:"已自动备份鼠标初始设置（可随时还原）",
+    tRestored:"已还原初始备份并写入鼠标", tNoBackup:"没有这只鼠标的初始备份",
+    tImported:"已导入设置，请按「应用写入鼠标」", tImportBad:"导入失败：文件格式不对",
+    tFactoryConfirm:"确定要把鼠标设置恢复为出厂默认值吗？", tDisconnected:"鼠标已断开连接",
+    tDirty:"设置已修改，记得按「应用写入鼠标」",
+    stage:"档位"
+  }
+};
+let lang = localStorage.getItem("dfm80_lang") || "zh-TW";
+if (!I18N[lang]) lang = "zh-TW";
+const t = k => (I18N[lang] && I18N[lang][k]) || I18N["zh-TW"][k] || k;
+function applyI18n(){
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    const k = el.dataset.i18n;
+    if (el.children.length && el.querySelector("small")) return; // handled manually
+    el.textContent = t(k);
+  });
+  // title with subtitle
+  const h = document.querySelector("h1");
+  h.innerHTML = `${t("title")}<small>${t("subtitle")}</small>`;
+  document.documentElement.lang = lang === "en" ? "en" : (lang === "zh-CN" ? "zh-Hans" : "zh-Hant");
+  buildSegs(); renderStages(); refreshConnUI();
+  if (document.getElementById("themePill").children.length) buildThemePill();
+}
+function buildLangSwitch(){
+  const box = document.getElementById("langs");
+  box.innerHTML = "";
+  [["zh-TW","繁中"],["en","EN"],["zh-CN","简中"]].forEach(([code,label])=>{
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.className = code===lang ? "on" : "";
+    b.onclick = ()=>{ lang = code; localStorage.setItem("dfm80_lang", code); buildLangSwitch(); applyI18n(); };
+    box.appendChild(b);
+  });
+}
+
+/* ============================================================
+ * 協定層（來源見 PROTOCOL.md，逆向自官方網頁驅動）
+ * ==========================================================*/
+const HID_FILTER = [{ usagePage: 0xFF01, usage: 0x10 }];
+const VID_WIRED = 0xA8A4; // 43172 有線
+// 移動喚醒的真正開關＝電競模式 highspeed_mode（實測發現：主控保持活躍→休眠可移動喚醒）。
+// 韌體無獨立喚醒欄位（byte55 wakeup_flag 寫入無效，官方桌面驅動亦無此欄），故廢棄該路。
+
+const POLL_TABLE = [125, 250, 500, 1000];   // 韌體 report_rate 值 1/2/3/4（官方網頁版漏顯 250，導致 1000 錯位成 500）
+const FACTORY = {                            // 官方 G3 PRO (DFM80) 預設
+  light_mode:0, report_rate:4, dpi_count:6, dpi_index:2, // report_rate 4=1000Hz（韌體 1/2/3/4=125/250/500/1000）
+  dpi:[800,1600,2400,3200,5000,12000],
+  scroll_flag:0, lod_value:1, sensor_flag:0, key_respond:8,
+  sleep_light:3, highspeed_mode:0, wakeup_flag:1, move_light_flag:1
+};
+const DPI_COLORS = ["#ff5d6c","#3ee6a8","#4f9dff","#ffd93e","#35e0e0","#c07bff"];
+
+let device = null;          // HIDDevice
+let pending = null;         // {expect, resolve, timer}
+let battTimer = null;
+
+const log = (dir, bytes) => {
+  const el = document.getElementById("diagLog");
+  const hex = Array.from(bytes).map(b=>b.toString(16).padStart(2,"0")).join(" ");
+  el.textContent = `${new Date().toTimeString().slice(0,8)} ${dir} ${hex}\n` + el.textContent;
+  if (el.textContent.length > 20000) el.textContent = el.textContent.slice(0, 15000);
+};
+
+function onInputReport(e){
+  const b = new Uint8Array(e.data.buffer);
+  log("←", b);
+  // 指令回應優先配對
+  if (pending && b[0] === 0xAA && b[1] === pending.expect){
+    const p = pending; pending = null; clearTimeout(p.timer); p.resolve(b); return;
+  }
+  // 非同步事件
+  if (b[0] === 0xAA && b[1] === 0xFA && b[8] === 16){ onLiveStatus(b[9]-1, b[10]-1); return; }
+  if (b[0] === 0xAA && b[1] === 0x30){ onBattery(b[8], b[9]); return; }
+  if (b[0] === 0xAA && b[1] === 0xED){ onMouseStatus(b[8]); return; } // 滑鼠本體在線狀態
+  // 不認得且有指令在等 → 當回應（官方作法：拿下一包）
+  if (pending){ const p = pending; pending = null; clearTimeout(p.timer); p.resolve(b); }
+}
+
+/** 送 65 元素陣列（[0]=reportId=0，比照官方原始碼索引），回傳回應 bytes 或 null */
+function sendCmd(arr65, {expect=null, timeout=900} = {}){
+  return new Promise(async (resolve)=>{
+    if (!device || !device.opened) return resolve(null);
+    const payload = new Uint8Array(64);
+    for (let i=1;i<arr65.length && i<65;i++) payload[i-1] = arr65[i] & 0xFF;
+    const exp = expect ?? arr65[2];
+    if (pending){ clearTimeout(pending.timer); pending.resolve(null); }
+    pending = { expect: exp, resolve, timer: setTimeout(()=>{ if(pending){ const p=pending; pending=null; p.resolve(null);} }, timeout) };
+    try {
+      log("→", payload);
+      await device.sendReport(0, payload);
+    } catch(err){
+      console.error(err);
+      if (pending){ clearTimeout(pending.timer); pending = null; }
+      resolve(null);
+    }
+  });
+}
+
+const lo = v => v & 0xFF, hi = v => (v >> 8) & 0xFF, u16 = (l,h) => l | (h << 8);
+
+/** cmd 0x0E 讀設定 */
+async function readConfig(){
+  const q = Array(65).fill(0);
+  q[1]=0x55; q[2]=0x0E; q[3]=1; q[4]=11; q[5]=48;
+  const r = await sendCmd(q);
+  if (!r) return null;
+  const invalid = (r[13]===0 && r[14]===0 && r[15]===0) || (r[13]===255 && r[14]===255 && r[15]===255);
+  if (invalid) return null;
+  return {
+    light_mode: r[9],
+    report_rate: r[10],                    // 1-based 原值
+    dpi_count: r[11],
+    dpi_index: r[12] - 1 > 0 ? r[12] - 1 : 0, // 0-based
+    dpi: [0,1,2,3,4,5].map(i => u16(r[13+2*i], r[14+2*i])),
+    scroll_flag: r[48], lod_value: r[49], sensor_flag: r[50],
+    key_respond: r[51], sleep_light: r[52], highspeed_mode: r[53],
+    wakeup_flag: r[55] & 0x0F, move_light_flag: (r[55] >> 4) & 0x0F
+  };
+}
+
+/** cmd 0x0F 寫設定（完整 read-modify-write 後的 config 物件） */
+async function writeConfig(c){
+  const a = Array(65).fill(0);
+  a[1]=0x55; a[2]=0x0F; a[3]=174; a[4]=10; a[5]=47; a[6]=1; a[7]=1; a[8]=1; a[9]=0;
+  a[10]=c.light_mode; a[11]=c.report_rate; a[12]=6; a[13]=c.dpi_index+1; // 檔數固定寫 6（韌體循環格數；實際檔數用 dpi 值重複排列模擬）
+  for (let i=0;i<6;i++){ a[14+2*i]=lo(c.dpi[i]); a[15+2*i]=hi(c.dpi[i]); }
+  a[49]=c.scroll_flag; a[50]=c.lod_value; a[51]=c.sensor_flag; a[52]=c.key_respond;
+  a[53]=pseudoSleepOn ? 0 : c.sleep_light; a[54]=c.highspeed_mode; // 假休眠開→韌體寫不休眠(0)，交給 exe 降頻
+  // 官方原始碼：寫入時 wakeup 在高 nibble（與讀取相反）。nibbleSwap 勾選=改放低 nibble（校準用）
+  a[55] = $("nibbleSwap") && $("nibbleSwap").checked
+    ? ((c.move_light_flag & 0x0F) << 4) | (c.wakeup_flag & 0x0F)
+    : ((c.wakeup_flag & 0x0F) << 4) | (c.move_light_flag & 0x0F);
+  // ★關鍵實驗：官方讀取從 wire55(=a[56]) 解析喚醒旗標，但官方寫入從未寫過這個 byte（永遠0）
+  // → 讀寫錯位一格。這裡按「讀取版面」把喚醒旗標補寫到 wire55：低 nibble=wakeup、高 nibble=move_light
+  a[56] = ((c.move_light_flag & 0x0F) << 4) | (c.wakeup_flag & 0x0F);
+  const r = await sendCmd(a, {timeout:1200});
+  return r !== undefined; // 寫入指令未必回 ack，逾時也視為送出
+}
+
+/** cmd 0x03 韌體版本 */
+async function readVersion(){
+  const q = Array(65).fill(0); q[1]=0x55; q[2]=0x03;
+  const r = await sendCmd(q);
+  if (!r) return "";
+  const d = i => (r[i]>=48 && r[i]<=57) ? String.fromCharCode(r[i]) : "0";
+  return `${d(23)}.${d(24)}.${d(25)}`;
+}
+
+/** cmd 0x30 查電量（回應走 0xAA,0x30 事件，共用 expect 機制） */
+let battKnown = false;
+async function queryBattery(){
+  const q = Array(65).fill(0);
+  q[1]=0x55; q[2]=0x30; q[3]=1; q[4]=11; q[5]=46; q[6]=1; q[7]=1; q[8]=1;
+  const r = await sendCmd(q, {expect:0x30, timeout:1500});
+  if (r) onBattery(r[8], r[9]);
+}
+
+/* ============================================================
+ * 狀態與 UI
+ * ==========================================================*/
+let cfg = null;        // 目前 UI 上的設定（可編輯）
+let devKey = "";       // 備份 key
+let dirty = false;
+// 假休眠（移動喚醒）狀態，由 exe(C#) 透過 bridge 同步；純瀏覽器時恆 false
+let pseudoSleepOn = false;
+let pseudoThresholdMin = 3;
+const deskBridge = window.chrome && window.chrome.webview;
+
+const $ = id => document.getElementById(id);
+function toast(msg, cls=""){
+  const el = $("toast");
+  el.textContent = msg; el.className = "show " + cls;
+  clearTimeout(el._t); el._t = setTimeout(()=> el.className = "", 3200);
+}
+function setDirty(d){
+  dirty = d;
+  document.body.classList.toggle("dirty", d);
+  $("applyBtn").disabled = !d || !device;
+}
+function markDirty(){ if (cfg) setDirty(true); }
+
+function refreshConnUI(){
+  const on = !!(device && device.opened);
+  $("connDot").className = "dot " + (on ? "on" : "");
+  $("connBtn").textContent = on ? t("disconnect") : t("connect");
+  ["rereadBtn","exportBtn","importBtn","factoryBtn"].forEach(id => $(id).disabled = !on);
+  $("applyBtn").disabled = !on || !dirty;
+  if (!on){
+    $("connName").textContent = t("notConnected");
+    $("connSub").textContent = t("connHint");
+    $("battBox").style.display = "none";
+  }
+}
+
+// 經接收器時滑鼠本體是否在線(休眠/離開範圍會變離線;0=離線為推測值,真機驗證)
+function onMouseStatus(st){
+  const asleep = (st === 0);
+  $("battBox").style.opacity = asleep ? ".45" : "1";
+  $("sleepBadge").style.display = asleep ? "inline" : "none";
+  if (asleep) $("sleepBadge").textContent = "💤 " + t("sleeping");
+  $("battCard").classList.toggle("asleep", asleep);
+  $("bigState").textContent = asleep ? "💤 " + t("sleeping") : $("bigState").dataset.chg || "";
+}
+function onBattery(pct, charging){
+  battKnown = true;
+  onMouseStatus(1); // 有電量回報=醒著
+  $("battBox").style.display = "flex";
+  $("battFill").style.width = Math.min(100, pct) + "%";
+  $("battFill").style.background = pct <= 20 ? "var(--err)" : pct <= 40 ? "var(--warn)" : "var(--ok)";
+  $("battTxt").textContent = pct + "%" + (charging ? " ⚡" : "");
+  $("bigFill").style.height = Math.min(100, pct) + "%";
+  $("bigPct").textContent = pct + "%";
+  $("bigState").dataset.chg = charging ? "⚡ " + t("chargingTxt") : "";
+  $("bigState").textContent = $("bigState").dataset.chg;
+}
+function onLiveStatus(dpiIdx, rateIdx){
+  if (!battKnown) queryBattery(); // 滑鼠醒著卻還不知道電量 → 補問
+  if (!cfg) return;
+  cfg.dpi_index = Math.max(0, dpiIdx);
+  renderStages();
+}
+
+/* ---------- DPI stages（1/2/3/6 填充模型：韌體固定循環 6 格，用重複排列模擬 N 檔）---------- */
+function dpiMax(){ return parseInt($("dpiMaxSel").value, 10); }
+// 把前 N 格的值用 modulo 鋪滿 6 格（1/2/3/6 整除→乾淨循環）
+function fillStages(){
+  if (!cfg) return;
+  const n = cfg.uiStages || 6;
+  for (let i=0;i<6;i++) cfg.dpi[i] = cfg.dpi[i % n];
+}
+// 從 6 格 DPI 反推使用者當初設的檔數（讀回/匯入時還原）
+function detectStages(dpi){
+  for (const n of [1,2,3]){
+    let ok = true;
+    for (let i=n;i<6;i++){ if (dpi[i] !== dpi[i % n]){ ok = false; break; } }
+    if (ok) return n;
+  }
+  return 6;
+}
+function renderStages(){
+  const box = $("stages");
+  // 使用者正在編輯 DPI 輸入框時別重建（否則滑鼠狀態回報觸發重建會打斷打字）
+  if (box.contains(document.activeElement) && document.activeElement.tagName === "INPUT") return;
+  box.innerHTML = "";
+  const c = cfg || {...FACTORY, dpi:[...FACTORY.dpi], uiStages:6};
+  const n = c.uiStages || 6;
+  const curLogical = ((c.dpi_index % n) + n) % n; // 韌體檔位(0-5) → 邏輯檔(0..N-1)
+  for (let i=0;i<n;i++){
+    const row = document.createElement("div");
+    row.className = "stage" + (i===curLogical ? " cur" : "");
+    const chip = document.createElement("div");
+    chip.className = "chip"; chip.style.background = DPI_COLORS[i]; chip.textContent = i+1;
+    chip.title = t("setCurrent");
+    chip.onclick = ()=>{ if(!cfg) return; cfg.dpi_index = i; renderStages(); markDirty(); };
+    const range = document.createElement("input");
+    range.type = "range"; range.min = 200; range.max = dpiMax(); range.step = 50; range.value = c.dpi[i];
+    const num = document.createElement("input");
+    num.type = "number"; num.min = 200; num.max = dpiMax(); num.step = 50; num.value = c.dpi[i];
+    range.oninput = ()=>{ num.value = range.value; if(cfg){ cfg.dpi[i] = +range.value; fillStages(); markDirty(); } };
+    num.onchange = ()=>{
+      let v = Math.round((+num.value || 200) / 50) * 50;
+      v = Math.max(200, Math.min(dpiMax(), v));
+      num.value = v; range.value = v;
+      if (cfg){ cfg.dpi[i] = v; fillStages(); markDirty(); }
+    };
+    const cur = document.createElement("div");
+    cur.className = "curmark"; cur.textContent = i===curLogical ? "● " + t("current") : t("setCurrent");
+    cur.onclick = chip.onclick;
+    row.append(chip, range, num, cur);
+    box.appendChild(row);
+  }
+}
+
+/* ---------- segmented builders ---------- */
+function seg(el, items, isOn, onPick){
+  el.innerHTML = "";
+  items.forEach(it=>{
+    const b = document.createElement("button");
+    b.textContent = it.label;
+    if (isOn(it.value)) b.className = "on";
+    b.onclick = ()=> onPick(it.value);
+    el.appendChild(b);
+  });
+}
+function buildSegs(){
+  const c = cfg || FACTORY;
+  seg($("dpiCountSeg"),
+    [1,2,3,6].map(v=>({label:String(v), value:v})),
+    v => v === (c.uiStages || 6),
+    v => { if(!cfg) return; cfg.uiStages = v; if (cfg.dpi_index >= v) cfg.dpi_index = cfg.dpi_index % v; fillStages(); buildSegs(); renderStages(); markDirty(); });
+  // 移動喚醒(電競模式)開啟時：韌體自行以 1000Hz 運作 → UI 只做「顯示鎖定」，絕不寫 report_rate
+  // (你存的輪詢率原封不動，關閉移動喚醒後自動恢復)
+  const esportsOn = c.highspeed_mode === 1;
+  seg($("pollSeg"),
+    POLL_TABLE.map((hz,i)=>({label:hz+" Hz", value:i+1})),
+    v => esportsOn ? v === POLL_TABLE.length : v === c.report_rate,
+    v => {
+      if (!cfg) return;
+      if (esportsOn){ toast(t("pollLock"), "err"); return; }
+      cfg.report_rate = v; buildSegs(); markDirty();
+    });
+  $("pollLockHint").style.display = esportsOn ? "" : "none";
+  $("pollSeg").querySelectorAll("button").forEach(b=>{ if (esportsOn && !b.classList.contains("on")) b.style.opacity = ".3"; });
+  seg($("lodSeg"),
+    [{label:t("lodLow"), value:1},{label:t("lodHigh"), value:2}],
+    v => v === c.lod_value,
+    v => { if(!cfg) return; cfg.lod_value = v; buildSegs(); markDirty(); });
+  // 電競模式 toggle（highspeed，橘色）＋輪詢率鎖定沿用 esportsOn
+  $("esportsToggle").checked = esportsOn;
+  $("esportsCard").classList.toggle("on", esportsOn);
+  // 移動喚醒 toggle = 假休眠（藍色，pseudoSleepOn 由 bridge 同步；純瀏覽器停用）
+  $("moveToggle").checked = pseudoSleepOn;
+  $("moveToggle").disabled = !deskBridge;
+  $("moveCard").classList.toggle("on", pseudoSleepOn);
+  $("moveCard").style.opacity = deskBridge ? "1" : ".5";
+  // 移動喚醒開時，鎖定「關閉時最小化到系統匣」不能取消（避免關視窗結束 exe）
+  if (deskBridge && $("minTrayChk")){
+    $("minTrayChk").checked = pseudoSleepOn ? true : $("minTrayChk").checked;
+    $("minTrayChk").disabled = pseudoSleepOn;
+    const lbl = $("minTrayChk").closest(".deskChk");
+    if (lbl) lbl.style.opacity = pseudoSleepOn ? ".6" : "1";
+  }
+  // 單擊喚醒小方形：不開假休眠＝現況(原廠單擊)，亮；開了＝退居次要，變暗
+  $("clickMini").classList.toggle("lit", !pseudoSleepOn);
+  $("clickMini").classList.toggle("dim", pseudoSleepOn);
+  // 休眠時間：文字固定不切換；值 app 版用 C# 同步的門檻，純瀏覽器用 cfg.sleep_light
+  const st = deskBridge ? (pseudoThresholdMin >= 1 ? pseudoThresholdMin : 3)
+                        : ((c.sleep_light && c.sleep_light >= 1) ? c.sleep_light : 1);
+  if (!deskBridge && cfg && (cfg.sleep_light == null || cfg.sleep_light < 1)) cfg.sleep_light = st;
+  const ae = document.activeElement;
+  if (ae !== $("sleepRange")) $("sleepRange").value = Math.min(60, st);
+  if (ae !== $("sleepNum")) $("sleepNum").value = st;
+  if (ae !== $("debounceNum")) $("debounceNum").value = c.key_respond;
+  if (ae !== $("wakeRawNum")) $("wakeRawNum").value = c.wakeup_flag;
+}
+
+// 通知 C# 假休眠狀態變更（開關 or 門檻）
+function pushPseudoSleep(){
+  if (deskBridge) deskBridge.postMessage(JSON.stringify({ type:"pseudosleep", enabled:pseudoSleepOn, thresholdMin:pseudoThresholdMin }));
+}
+
+function syncFromCfg(){
+  if (cfg && cfg.uiStages == null) cfg.uiStages = detectStages(cfg.dpi);
+  buildSegs(); renderStages();
+}
+
+/* ---------- inputs ---------- */
+// 移動喚醒 = 假休眠開關（即時由 exe 寫入韌體，不需按套用）
+$("moveToggle").onchange = e => {
+  if (!deskBridge){ e.target.checked = false; return; }
+  pseudoSleepOn = e.target.checked;
+  // 開啟假休眠→自動綁定「關閉時最小化到系統匣」，避免關視窗結束 exe 導致假休眠失效
+  if (pseudoSleepOn && !$("minTrayChk").checked){
+    $("minTrayChk").checked = true;
+    deskBridge.postMessage(JSON.stringify({ type:"deskcfg", autostart:$("autostartChk").checked, minimizeToTray:true }));
+  }
+  pushPseudoSleep();
+  buildSegs();
+  toast(pseudoSleepOn ? t("tPseudoOn") : t("tPseudoOff"), "ok");
+};
+// 電競模式 = highspeed（寫韌體，需套用）
+$("esportsToggle").onchange = e => {
+  if (!cfg){ e.target.checked = false; return; }
+  cfg.highspeed_mode = e.target.checked ? 1 : 0;
+  buildSegs(); markDirty();
+};
+$("sleepRange").oninput = e => {
+  $("sleepNum").value = e.target.value;
+  const v = +e.target.value;
+  if (deskBridge){ pseudoThresholdMin = v; pushPseudoSleep(); } // app：即時由 C# 寫韌體
+  else if (cfg){ cfg.sleep_light = v; markDirty(); }            // 純瀏覽器：套用寫韌體
+};
+$("sleepNum").onchange = e => {
+  let v = Math.max(1, Math.min(255, Math.round(+e.target.value || 3)));
+  e.target.value = v; $("sleepRange").value = Math.min(60, v);
+  if (deskBridge){ pseudoThresholdMin = v; pushPseudoSleep(); }
+  else if (cfg){ cfg.sleep_light = v; markDirty(); }
+};
+$("debounceNum").onchange = e => {
+  let v = Math.max(0, Math.min(30, Math.round(+e.target.value || 8)));
+  e.target.value = v;
+  if (cfg){ cfg.key_respond = v; markDirty(); }
+};
+$("wakeRawNum").onchange = e => {
+  let v = Math.max(0, Math.min(15, Math.round(+e.target.value || 0)));
+  e.target.value = v;
+  if (cfg){ cfg.wakeup_flag = v; buildSegs(); markDirty(); }
+};
+$("dpiMaxSel").onchange = ()=> renderStages();
+
+/* ============================================================
+ * 連線流程
+ * ==========================================================*/
+function pickVendorCollection(devices){
+  return devices
+    .filter(d => (d.collections||[]).some(c => c.usagePage === 0xFF01 && c.usage === 0x10))
+    .sort((a,b) => a.vendorId - b.vendorId)[0];
+}
+
+async function connect(fromRequest){
+  let devs = [];
+  try { devs = await navigator.hid.getDevices(); } catch(_){}
+  let d = pickVendorCollection(devs);
+  if (!d && fromRequest){
+    try {
+      const granted = await navigator.hid.requestDevice({ filters: HID_FILTER });
+      d = pickVendorCollection(granted) || granted[0];
+    } catch(_){}
+  }
+  if (!d){ if (fromRequest) toast(t("tNoDev"), "err"); return; }
+
+  device = d;
+  try {
+    if (!device.opened) await device.open();
+  } catch(err){
+    console.error(err);
+    toast(t("tReadFail"), "err");
+    device = null; refreshConnUI(); return;
+  }
+  device.oninputreport = onInputReport;
+  devKey = `dfm80_${device.vendorId.toString(16)}_${device.productId.toString(16)}`;
+
+  $("connName").textContent = `${device.productName || "DFM80"} · ${t("connected")}`;
+  const mode = device.vendorId === VID_WIRED ? t("wired") : t("dongle");
+  $("connSub").textContent = `${mode} · VID 0x${device.vendorId.toString(16).toUpperCase().padStart(4,"0")} / PID 0x${device.productId.toString(16).toUpperCase().padStart(4,"0")}`;
+  refreshConnUI();
+  renderDiag();
+
+  const fw = await readVersion();
+  if (fw) $("connSub").textContent += ` · ${t("fw")} ${fw}`;
+
+  const awake = await reread(true);
+  battKnown = false;
+  if (awake){
+    queryBattery();
+    setTimeout(()=>{ if (!battKnown) queryBattery(); }, 3000);  // 剛連上沒回就再問一次
+    setTimeout(()=>{ if (!battKnown) queryBattery(); }, 10000);
+  } else {
+    startWakeWait(); // 滑鼠在睡：等使用者點一下喚醒，自動接上
+  }
+  clearInterval(battTimer);
+  battTimer = setInterval(queryBattery, 60000);
+}
+
+async function disconnect(){
+  clearInterval(battTimer);
+  clearInterval(wakeWaitTimer);
+  if (device){ try { await device.close(); } catch(_){} }
+  device = null; cfg = null; setDirty(false);
+  refreshConnUI();
+}
+
+$("connBtn").onclick = ()=> (device && device.opened) ? disconnect() : connect(true);
+
+if (!("hid" in navigator)){
+  $("nohid").style.display = "block";
+  $("connBtn").disabled = true;
+} else {
+  navigator.hid.addEventListener("disconnect", e=>{
+    if (device && e.device === device){ device = null; cfg = null; setDirty(false); refreshConnUI(); toast(t("tDisconnected"), "err"); }
+  });
+  // 關閉/離開分頁就釋放裝置，讓新分頁能直接接手（HID 一次只能被一個分頁持有）
+  window.addEventListener("pagehide", ()=>{ try { if (device && device.opened) device.close(); } catch(_){} });
+  // 不自動重連：一律由使用者按「連接滑鼠」手動連（自動連容易搶輸/失敗）
+}
+
+/* ============================================================
+ * 讀取 / 寫入 / 備份
+ * ==========================================================*/
+async function reread(isFirst, silent){
+  const c = await readConfig();
+  if (!c){
+    if (!silent) toast(t("tReadFail"), "err");
+    if (isFirst && !cfg){ cfg = {...FACTORY, dpi:[...FACTORY.dpi]}; syncFromCfg(); setDirty(false); }
+    return false;
+  }
+  cfg = c;
+  syncFromCfg(); setDirty(false);
+  renderDiag(c);
+  toast(t("tReadOk"), "ok");
+  // 首次讀到這隻滑鼠 → 靜默存一份出廠設定（供診斷面板參照，不佔 UI）
+  const bk = "bk_" + devKey;
+  if (!localStorage.getItem(bk)){
+    localStorage.setItem(bk, JSON.stringify({ savedAt:new Date().toISOString(), version:VERSION, config:c }));
+  }
+  return true;
+}
+$("rereadBtn").onclick = ()=> reread(false);
+
+// 滑鼠休眠時連得上接收器但讀不到資料 → 自動每 2.5 秒重試，使用者點一下滑鼠喚醒就自動接上
+let wakeWaitTimer = null;
+function startWakeWait(){
+  clearInterval(wakeWaitTimer);
+  const base = $("connSub").textContent;
+  $("connSub").textContent = base + " · " + t("waitWake");
+  let tries = 0;
+  wakeWaitTimer = setInterval(async ()=>{
+    if (!device || ++tries > 48){ clearInterval(wakeWaitTimer); return; }
+    if (await reread(false, true)){
+      clearInterval(wakeWaitTimer);
+      $("connSub").textContent = base;
+      battKnown = false;
+      queryBattery();
+    }
+  }, 2500);
+}
+
+$("applyBtn").onclick = async ()=>{
+  if (!cfg || !device) return;
+  await writeConfig(cfg);
+  // 寫完立刻讀回核對
+  const back = await readConfig();
+  if (back){
+    cfg = back; syncFromCfg(); setDirty(false); renderDiag(back);
+    toast(t("tWriteOk"), "ok");
+  } else {
+    setDirty(false);
+    toast(t("tWriteOk"), "ok"); // 寫入包已送出；讀回失敗不當致命
+  }
+};
+
+$("factoryBtn").onclick = async ()=>{
+  if (!confirm(t("tFactoryConfirm"))) return;
+  cfg = {...FACTORY, dpi:[...FACTORY.dpi]};
+  syncFromCfg();
+  await writeConfig(cfg);
+  const back = await readConfig();
+  if (back){ cfg = back; syncFromCfg(); }
+  setDirty(false);
+  toast(t("tWriteOk"), "ok");
+};
+
+$("exportBtn").onclick = ()=>{
+  if (!cfg) return;
+  const blob = new Blob([JSON.stringify({app:"DFM80-WebDriver", version:VERSION, exportedAt:new Date().toISOString(), config:cfg}, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `DFM80_config_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+};
+$("importBtn").onclick = ()=> $("importFile").click();
+$("importFile").onchange = async e=>{
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  try {
+    const j = JSON.parse(await f.text());
+    const c = j.config || j;
+    if (typeof c.sleep_light !== "number" || !Array.isArray(c.dpi)) throw 0;
+    cfg = {...FACTORY, ...c, dpi: c.dpi.slice(0,6).map(v=>Math.max(50, Math.min(50000, v|0)))};
+    while (cfg.dpi.length < 6) cfg.dpi.push(FACTORY.dpi[cfg.dpi.length]);
+    syncFromCfg(); setDirty(true);
+    toast(t("tImported"), "ok");
+  } catch(_){ toast(t("tImportBad"), "err"); }
+};
+
+/* ---------- diagnostics ---------- */
+function renderDiag(c){
+  const box = $("diagInfo");
+  if (!device){ box.innerHTML = `<div class="kv">${t("diagEmpty")}</div>`; return; }
+  const cols = (device.collections||[]).map(x=>`0x${(x.usagePage||0).toString(16).toUpperCase()}/0x${(x.usage||0).toString(16).toUpperCase()}`).join(", ");
+  let html = `
+    <div class="kv"><b>${device.productName || "?"}</b></div>
+    <div class="kv">VID/PID: <b>0x${device.vendorId.toString(16).toUpperCase().padStart(4,"0")} / 0x${device.productId.toString(16).toUpperCase().padStart(4,"0")}</b></div>
+    <div class="kv">Collections: <b>${cols}</b></div>`;
+  if (c) html += `<div class="kv">raw config: <b>${JSON.stringify(c)}</b></div>`;
+  const bk = localStorage.getItem("bk_" + devKey);
+  if (bk){
+    try { html += `<div class="kv">factory backup: <b>${JSON.stringify(JSON.parse(bk).config)}</b></div>`; } catch(_){}
+  }
+  box.innerHTML = html;
+}
+
+/* ---------- boot ---------- */
+// 進階設定+診斷預設隱藏，?debug=1 顯示（校準/除錯用，功能保留未刪）
+if (new URLSearchParams(location.search).get("debug") === "1"){
+  $("advCard").style.display = "";
+  $("diagCard").style.display = "";
+}
+// 主題：跟隨系統 / 深 / 淺（預設跟隨系統；?theme=system|dark|light 可強制，選擇記 localStorage）
+let themePref = "system";
+const themeMq = window.matchMedia("(prefers-color-scheme: light)");
+function buildThemePill(){
+  const box = $("themePill");
+  box.innerHTML = "";
+  [["light","☀️","themeLight"],["dark","🌙","themeDark"],["system","🖥️","themeSystem"]].forEach(([v,icon,key])=>{
+    const b = document.createElement("button");
+    b.textContent = icon; b.title = t(key);
+    b.className = v === themePref ? "on" : "";
+    b.onclick = ()=>{ themePref = v; localStorage.setItem("dfm80_theme", v); applyTheme(); };
+    box.appendChild(b);
+  });
+}
+function applyTheme(){
+  const eff = themePref === "system" ? (themeMq.matches ? "light" : "dark") : themePref;
+  document.documentElement.dataset.theme = eff;
+  buildThemePill();
+}
+{
+  const qp = new URLSearchParams(location.search).get("theme");
+  themePref = qp || localStorage.getItem("dfm80_theme") || "system";
+  if (!["system","dark","light"].includes(themePref)) themePref = "system";
+  themeMq.addEventListener("change", ()=>{ if (themePref === "system") applyTheme(); });
+  applyTheme();
+}
+// DPI 卡摺疊狀態記憶（預設展開）
+{
+  const dc = $("dpiCard");
+  if (localStorage.getItem("dfm80_dpi_open") === "0") dc.open = false;
+  dc.ontoggle = ()=> localStorage.setItem("dfm80_dpi_open", dc.open ? "1" : "0");
+}
+$("verTag").textContent = "v" + VERSION;
+buildLangSwitch();
+applyI18n();
+setDirty(false);
+// 展示/截圖用：?demobatt=90 模擬電量（不影響實機）
+{
+  const db = parseInt(new URLSearchParams(location.search).get("demobatt"), 10);
+  if (!isNaN(db)) onBattery(Math.max(0, Math.min(100, db)), false);
+}
+
+// 桌面版 bridge：只在 exe（WebView2）環境顯示「桌面版」設定方框，與 C# 同步 config
+(function(){
+  const wv = window.chrome && window.chrome.webview;
+  if (!wv) return; // 純瀏覽器：桌面設定方框保持隱藏
+  $("desktopCard").style.display = "";
+  const send = ()=> wv.postMessage(JSON.stringify({ type:"deskcfg", autostart:$("autostartChk").checked, minimizeToTray:$("minTrayChk").checked }));
+  $("autostartChk").onchange = send;
+  $("minTrayChk").onchange = send;
+  wv.addEventListener("message", e=>{
+    try{
+      const m = JSON.parse(e.data);
+      if (m.type === "deskcfg"){
+        $("autostartChk").checked = !!m.autostart;
+        $("minTrayChk").checked = !!m.minimizeToTray;
+        // 假休眠狀態由 C# 權威同步
+        pseudoSleepOn = !!m.pseudoSleep;
+        if (typeof m.thresholdMin === "number") pseudoThresholdMin = m.thresholdMin;
+        buildSegs();
+      }
+      else if (m.type === "throttle"){
+        // C# 降頻/恢復即時通知：省電模式標籤（不動輪詢率設定按鈕）
+        $("ecoBadge").style.display = m.throttled ? "inline-flex" : "none";
+      }
+    }catch(_){}
+  });
+  wv.postMessage(JSON.stringify({ type:"deskready" })); // 請 C# 回傳目前設定
+})();
+</script>
+</body>
+</html>
