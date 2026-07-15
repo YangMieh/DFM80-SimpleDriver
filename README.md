@@ -1,8 +1,13 @@
-# DFM80 簡易驅動
+# DFM80 簡易驅動 · DFM80 Simple Driver
 
-A lightweight desktop driver for the **darkFlash DFM80** series mouse (also sold as **aigo GM80** in China). Single-file `.exe`, no installer, nothing phoning home.
+darkFlash DFM80（大陸版 aigo 游龍 GM80）滑鼠的輕量桌面驅動，單一 `.exe`、免安裝、免瀏覽器、不連任何伺服器。
+A lightweight single-file desktop driver for the **darkFlash DFM80** mouse (aka **aigo GM80**). No installer, no browser, nothing phoning home.
 
-**Version: v1.0.0**
+| 下載 Download | 說明 Notes |
+|---|---|
+| **[⬇ 下載 DFM80-SimpleDriver.exe](https://github.com/YangMieh/DFM80-SimpleDriver/releases/latest/download/DFM80-SimpleDriver.exe)** | 雙擊即用，此連結永遠指向最新版 · Double-click to run; always points to the latest release |
+
+<!-- -->
 
 ## Why
 
@@ -32,12 +37,6 @@ The protocol was reverse-engineered from darkFlash's own web driver. The app is 
 **Source-available, not open for modification.** You may download, use and redistribute this software verbatim for free, but **modifying, commercial use, and reverse engineering are not permitted**. See [LICENSE.txt](LICENSE.txt).
 
 <!-- -->
-
-# DFM80 簡易驅動（中文說明）
-
-**darkFlash DFM80** 系列滑鼠（大陸版即 **aigo 游龍 GM80**）的輕量桌面驅動。單一 `.exe`、免安裝、不連任何伺服器。
-
-**版本：v1.0.0**
 
 ## 為什麼做這個
 
