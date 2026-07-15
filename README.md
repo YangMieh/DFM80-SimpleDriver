@@ -6,7 +6,7 @@ A lightweight single-file desktop driver for the **darkFlash DFM80** mouse (aka 
 
 | 下載 Download | 說明 Notes |
 |---|---|
-| **[⬇ 下載 DFM80-SimpleDriver.exe](https://github.com/YangMieh/DFM80-SimpleDriver/releases/latest/download/DFM80-SimpleDriver.exe)** | 雙擊即用，此連結永遠指向最新版 · Double-click to run; always points to the latest release |
+| **[DFM80-SimpleDriver.exe](https://github.com/YangMieh/DFM80-SimpleDriver/releases/latest/download/DFM80-SimpleDriver.exe)** | 雙擊即用，此連結永遠指向最新版 · Double-click to run; always points to the latest release |
 
 <!-- -->
 
