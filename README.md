@@ -1,6 +1,7 @@
 # DFM80 簡易驅動 · DFM80 Simple Driver
 
 darkFlash DFM80（大陸版 aigo 游龍 GM80）滑鼠的輕量桌面驅動，單一 `.exe`、免安裝、免瀏覽器、不連任何伺服器。
+
 A lightweight single-file desktop driver for the **darkFlash DFM80** mouse (aka **aigo GM80**). No installer, no browser, nothing phoning home.
 
 | 下載 Download | 說明 Notes |
